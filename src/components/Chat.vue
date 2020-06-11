@@ -51,15 +51,8 @@
 <script>
 import Timestamp from '@/components/Timestamp'
 import Gun from 'gun/gun'
-//import VueGun from 'vue-gun';
-//import Webrtc from 'gun/lib/webrtc'
 // eslint-disable-next-line no-unused-vars
-//import Webrtc from 'gun/lib/webrtc'
-
-//this.use(VueGun, {
-//    gun: new Gun() // your gun instance
-//});
-//console.log(Webrtc)
+import Webrtc from 'gun/lib/webrtc'
 
 export default {
     components: {
@@ -197,9 +190,9 @@ export default {
         })
         this.$gun.get('chatrooms').get(this.chatroom).get('chats').once(this.processGunUpdate)
         this.getGunUpdates()
-        /*setInterval(() => {
+        setInterval(() => {
             this.connectionDetails()
-        }, 2500)*/
+        }, 2500)
         this.connectionDetails()
     },
     created: function(){
