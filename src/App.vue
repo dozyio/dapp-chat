@@ -1,9 +1,7 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link> |
-      <router-link to="/chat">Chat</router-link>
+      <router-link to="/">Chat with GUN DB and Vue.js - Dapp</router-link>
     </div>
     <router-view/>
   </div>

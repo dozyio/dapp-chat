@@ -1,4 +1,4 @@
-# application
+# Chat using GUN db and Vue.js - Dapp
 
 ## Project setup
 ```
@@ -20,5 +20,3 @@ npm run build
 npm run lint
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
