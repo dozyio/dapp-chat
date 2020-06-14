@@ -19,7 +19,8 @@ Vue.config.productionTip = false
 Vue.use(VueGun, {
     gun: new Gun(
         {peers: [
-            'https://i.dozy.io:8765/gun',
+            //'https://i.dozy.io:8765/gun',
+            'https://mvp-gun.herokuapp.com/gun', 'https://e2eec.herokuapp.com/gun'
         ]},
         /*{rtc: 
             {'iceServers': [
