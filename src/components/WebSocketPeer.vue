@@ -42,7 +42,7 @@ export default {
 
     },
     mounted: function(){
-        console.log("Websocket peer",this.peer)
+        //console.log("Websocket peer",this.peer)
     },
     created: function(){
     }

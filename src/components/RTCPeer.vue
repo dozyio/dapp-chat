@@ -1,11 +1,11 @@
 <template>
     <div class="notification" :class="statusClass">
         {{ peer.id }} (WebRTC) - {{ peer.connectionState | capitalize }}
-        <div v-if="peer.remoteDescription.sdp">
+        <!-- <div v-if="peer.remoteDescription.sdp">
             {{ peer.remoteDescription.sdp }}
-        </div>
-        {{ JSON.stringify(peer) }}
-        <div v-html="sdp"></div>
+        </div> -->
+        <!-- {{ JSON.stringify(peer) }} -->
+        <!-- <div v-html="sdp"></div> -->
     </div>
 </template>
 

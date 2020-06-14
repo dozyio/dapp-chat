@@ -4,7 +4,7 @@
             <div class="connectionDetails">
                 <div class="level is-mobile">
                     <StatBox heading="Connected" :content="peerCount" footer="Peer" />
-                    <StatBox heading="WebSocket" :content="webSocketPeerCount" footer="Server" />
+                    <StatBox heading="WebSocket" :content="webSocketPeerCount" footer="Gun Server" />
                     <StatBox heading="WebRTC" :content="webRTCPeerCount" footer="Peer" />
                     <StatBox heading="Message" :content="messageCount" footer="Count" notplural />
                 </div>
@@ -16,10 +16,10 @@
                 </div>
             </div>
         </div>
-        <div class="container chats" id="chats" style="max-height: 70vh; overflow-y: overlay; margin: 1.25rem auto; ">
+        <div class="container chat" id="chat" style="max-height: 50vh; overflow-y: overlay; margin: 1.25rem auto; ">
             <div class="box" style="background-color: transparent; padding: 0 1.25rem 0 0">
-                <div v-for="msg in chats" :key="msg.key">
-                    <div class="box chatmessages" v-if="msg.msg" style="margin-bottom: 2px;">
+                <div v-for="msg in messages" :key="msg.key">
+                    <div class="box chatmessages" v-if="msg.msg" style="margin-bottom: 2px;" :id="getSoulNoSlash(msg)">
                         <div class="columns">
                             <div v-if="msg.user" class="column is-narrow" :style="{backgroundColor: stringToColor(msg.user)}">
                                 <span style="color: white">{{ msg.user }}</span>
@@ -45,11 +45,11 @@
                         <input class="input is-medium" v-model="newMessage" placeholder="hello..." v-on:keyup.enter="send" />
                     </div>
                     <div class="column is-narrow">
-                        <div class="button is-primary is-medium" :class="[{ 'is-loading': sending }]" v-on:click="send">{{ sendButtonText }}</div>
+                        <div class="button is-success is-medium" :class="[{ 'is-loading': sending }]" v-on:click="send">{{ sendButtonText }}</div>
                     </div>
                 </div>
             </div>
-            <div v-if="error">Error: {{ error }}</div>
+            <div v-if="error" class="notification is-warning">Error: {{ error }}</div>
         </footer>
     </div>
 </template>
@@ -67,17 +67,15 @@ export default {
         StatBox
     },
     name: 'Chats',
+    gun: new Object,
     data: function() {
         return {
-            gun: null,
-            chats: {},
+            //gun: null,
+            messages: {},
             mesh: null,
             newMessage: "",
-            peerMessage: "",
             sendButtonText: "Send",
-            peerSendButtonText: "Send To Peers",
             sending: false,
-            peerSending: false,
             error: "",
             root: 'dchat',
             chatroom: 1,
@@ -86,8 +84,15 @@ export default {
         }
     },
     computed: {
+        rootNode: function(){
+            return this.root+'/'+this.chatroom
+        },
+        sortedMessages: function(){
+            //todo
+            return '';
+        },
         messageCount: function(){
-            return Object.keys(this.chats).length
+            return Object.keys(this.messages).length
         },
         peerCount: function(){
             return Object.keys(this.peers).length
@@ -120,9 +125,24 @@ export default {
     methods: {
         send(){
             let msgId = this.generateId()
-            this.$gun.get(this.root+'/'+this.chatroom).get(msgId).put({user: this.user, msg: this.newMessage}, this.sendCallback)
+            this.$options.gun.get(msgId).put({user: this.user, msg: this.newMessage}, this.sendCallback)
             this.sending = true
-            this.newMessage = ""
+        },
+        sendCallback(ack){
+            if(ack.ok == 1){
+                this.newMessage = ""
+                this.sending = false
+            }
+            if(!ack.ok){
+                console.log("failed ack")
+                console.log(ack)
+                if(ack.err == undefined){
+                    this.error = "Couldn't send message"
+                } else {
+                    this.error = ack.err
+                }
+                this.sending = true
+            }
         },
         closeConnection(peer){
             console.log(peer)
@@ -156,67 +176,28 @@ export default {
             this.$gun.opt({peers: newPeerList})
             //this.peers = newPeerList
         },
-        sendCallback(ack){
-            if(ack.ok == 1){
-                this.newMessage = ""
-                this.sending = false
-            }
-            if(!ack.ok){
-                console.log("failed ack")
-                console.log(ack)
-                if(ack.err == undefined){
-                    this.error = "Couldn't send message"
-                } else {
-                    this.error = ack.err
-                }
-                this.sending = true
-            }
-        },
         connectionDetails(){
-            /*
-            let connections = new Set()
-            // eslint-disable-next-line no-unused-vars
-            for(const [key, value] of Object.entries(this.$gun.back('opt.peers'))){
-                //console.log(value)
-                let json = JSON.parse(JSON.stringify(value))
-                if(value.wire !== undefined){
-                    connections.add({url: value.url, type: value.wire.constructor.name, details: json})
-                }
-                else {
-                    connections.add({url: value.url, type: 'unknown type, unknown status', details: json})
-                }
-            }*/
             this.peers = Object.assign({}, this.$gun.back('opt.peers'))
-            //this.peers = this.$gun.back('opt.peers')//[...connections]
-            //console.log(this.peers)
         },
         getGunUpdates(){
-            this.$gun.get(this.root+'/'+this.chatroom).on(this.processGunUpdate, { change: true })
+            this.$options.gun.map().on(this.processGunUpdate, true)
         },
-        processGunUpdate(){
-            let unsorted = []
-            this.$gun.get(this.root+'/'+this.chatroom).map().on((node, key) => {
-                //this.$set(this.chats, key, node)
-                unsorted[key] = node;
-            })
-            unsorted.sort(function(a, b){
-                a = this.getTimestamp(a)
-                b = this.getTimestamp(b)
-                if(a > b) {
-                    return 1
-                } else if(a < b){
-                    return -1
-                }
-                return 0
-            })
-            for(const key in unsorted){
-                this.$set(this.chats, key, unsorted[key])
+        processGunUpdate(msg, id){
+            console.log('got update',id,msg)
+            if(msg){
+                this.$set(this.messages, id, msg)
             }
-            this.scrollBottom()
+            this.scrollToMessage(this.getSoulNoSlash(msg))
         },
         getSoul(data){
             if(Gun.node.is(data)){
                 return(Gun.node.soul(data))
+            }
+            return false
+        },
+        getSoulNoSlash(data){
+            if(Gun.node.is(data)){
+                return(Gun.node.soul(data).replace(/\//g,''))
             }
             return false
         },
@@ -247,12 +228,6 @@ export default {
             }
             return colour;
         },
-        usernameWidth(){
-            if(this.user.length < 4){
-                return '5em'
-            }
-            return this.user.length+'em'
-        },
         generateId(len){
             let arr = new Uint8Array((len || 40) / 2)
             window.crypto.getRandomValues(arr)
@@ -261,15 +236,22 @@ export default {
         dec2hex(dec){
             return(dec.toString(16).padStart(2, '0'))
         },
-        scrollBottom(){
-            let chatDiv = document.getElementById("chats");
-            if(chatDiv){
-                chatDiv.scrollTop = chatDiv.scrollHeight;
+        usernameWidth(){
+            if(this.user.length < 4){
+                return '5em'
             }
-        }
+            return this.user.length+'em'
+        },
+        scrollToMessage(id){
+            this.$nextTick(() => {
+                let element = document.getElementById(id)
+                if(element){
+                    element.scrollIntoView({behavious: "smooth", block: "end", inline: "nearest"})
+                }
+            })
+        },
     },
     mounted: function(){
-        //this.mesh = this.$gun.back('opt.mesh')
         this.$gun.on('hi', (peer) => {
             console.log('hi', peer)
             this.connectionDetails()
@@ -278,17 +260,18 @@ export default {
             console.log('bye', peer)
             this.connectionDetails()
         })
-        this.$gun.on('hear', function(msg, peer = null){
+        //mesh
+        //this.mesh = this.$gun.back('opt.mesh')
+        /*this.$gun.on('hear', function(msg, peer = null){
             console.log('hear msg', msg)
             console.log('hear msg peer', peer)
-        })
-        this.$gun.get(this.root+'/'+this.chatroom).once(this.processGunUpdate)
+        })*/
+        this.$options.gun = this.$gun.get(this.rootNode); //.once(this.processGunUpdate)
         this.getGunUpdates()
         this.connectionDetails()
         setInterval(() => {
             this.connectionDetails()
         }, 2500)
-        this.scrollBottom()
     },
     created: function(){
         this.user = 'user'+Math.floor(1000 + Math.random() * 9000);
