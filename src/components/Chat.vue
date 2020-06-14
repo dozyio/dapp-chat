@@ -19,13 +19,14 @@
         <div class="container chat" id="chat" style="max-height: 50vh; overflow-y: overlay; margin: 1.25rem auto; ">
             <div class="box" style="background-color: transparent; padding: 0 1.25rem 0 0">
                 <div v-for="msg in messages" :key="msg.key">
+                    {{ msg }}
                     <div class="box chatmessages" v-if="msg.msg" style="margin-bottom: 2px;" :id="getSoulNoSlash(msg)">
                         <div class="columns">
                             <div v-if="msg.user" class="column is-narrow" :style="{backgroundColor: stringToColor(msg.user)}">
                                 <span style="color: white">{{ msg.user }}</span>
                             </div>
                             <div class="column">
-                                {{ msg.msg }}
+                                {{ msg }}
                             </div>
                             <div class="column is-narrow" style="border-left: 1px dashed lightgrey">
                                 <Timestamp class="timestamp" :time="getTimestamp(msg)" />
@@ -78,7 +79,7 @@ export default {
             sending: false,
             error: "",
             root: 'dchat',
-            chatroom: 1,
+            chatroom: 2,
             peers: {},
             user: '',
         }
@@ -124,9 +125,10 @@ export default {
     },
     methods: {
         send(){
-            let msgId = this.generateId()
-            this.$options.gun.get(msgId).put({user: this.user, msg: this.newMessage}, this.sendCallback)
-            this.sending = true
+            let msgId = this.generateId(20)
+            //this.$options.gun.get(msgId).put({user: this.user, msg: this.newMessage})//, this.sendCallback)
+            this.$options.gun.get(msgId).put(this.newMessage)//, this.sendCallback)
+            //this.sending = true
         },
         sendCallback(ack){
             if(ack.ok == 1){
@@ -252,6 +254,24 @@ export default {
         },
     },
     mounted: function(){
+        //mesh
+        //this.mesh = this.$gun.back('opt.mesh')
+        /*this.$gun.on('hear', function(msg, peer = null){
+            console.log('hear msg', msg)
+            console.log('hear msg peer', peer)
+        })*/
+        this.getGunUpdates()
+        this.connectionDetails()
+        setInterval(() => {
+            this.connectionDetails()
+        }, 2500)
+    },
+    created: function(){
+        this.$options.gun = this.$gun.get(this.rootNode); //.once(this.processGunUpdate)
+        console.log("options gun",this.$options.gun)
+        console.log(this.$options.gun.constructor.name)
+        console.log(JSON.stringify(this.$options.gun))
+
         this.$gun.on('hi', (peer) => {
             console.log('hi', peer)
             this.connectionDetails()
@@ -260,20 +280,6 @@ export default {
             console.log('bye', peer)
             this.connectionDetails()
         })
-        //mesh
-        //this.mesh = this.$gun.back('opt.mesh')
-        /*this.$gun.on('hear', function(msg, peer = null){
-            console.log('hear msg', msg)
-            console.log('hear msg peer', peer)
-        })*/
-        this.$options.gun = this.$gun.get(this.rootNode); //.once(this.processGunUpdate)
-        this.getGunUpdates()
-        this.connectionDetails()
-        setInterval(() => {
-            this.connectionDetails()
-        }, 2500)
-    },
-    created: function(){
         this.user = 'user'+Math.floor(1000 + Math.random() * 9000);
     }
 
