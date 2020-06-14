@@ -3,55 +3,54 @@
         <div class="container">
             <div class="connectionDetails">
                 <div class="level is-mobile">
-                    <StatBox heading="Connected" :content="peerCount" footer="Peer" />
-                    <StatBox heading="WebSocket" :content="webSocketPeerCount" footer="Gun Server" />
-                    <StatBox heading="WebRTC" :content="webRTCPeerCount" footer="Peer" />
-                    <StatBox heading="Message" :content="messageCount" footer="Count" notplural />
+                    <StatBox heading="Connected" :content="peerCount" footer="Peer" v-on:click.native="toggleShowPeers" />
+                    <StatBox heading="WebSocket" :content="webSocketPeerCount" footer="Super Peer" v-on:click.native="toggleShowPeers" />
+                    <StatBox heading="WebRTC" :content="webRTCPeerCount" footer="Peer" v-on:click.native="toggleShowPeers" />
+                    <StatBox heading="Message" :content="messageCount" footer="Count" notplural v-on:click.native="toggleShowPeers" />
                 </div>
                 <div v-if="peerCount">
-                    <PeerList :peers="peers" />
+                    <PeerList v-if="showPeers" :peers="peers" />
                 </div>
                 <div v-else class="notification is-danger">
                     Disconnected
                 </div>
             </div>
         </div>
-        <div class="container chat" id="chat" style="max-height: 50vh; overflow-y: overlay; margin: 1.25rem auto; ">
-            <div class="box" style="background-color: transparent; padding: 0 1.25rem 0 0">
-                <div v-for="msg in messages" :key="msg.key">
-                    {{ msg }}
-                    <div class="box chatmessages" v-if="msg.msg" style="margin-bottom: 2px;" :id="getSoulNoSlash(msg)">
+        <div class="container chat" id="chat">
+            <div class="box messages-box">
+                <div v-for="(msg, name) in messages" :key="msg.name">
+                    <div class="box chatmessages" v-if="msg" :id="name">
                         <div class="columns">
-                            <div v-if="msg.user" class="column is-narrow" :style="{backgroundColor: stringToColor(msg.user)}">
-                                <span style="color: white">{{ msg.user }}</span>
+                            <div v-if="msg.user" class="column is-narrow message-user" :style="{backgroundColor: stringToColor(msg.user)}">
+                                {{ msg.user }}
                             </div>
                             <div class="column">
-                                {{ msg }}
+                                {{ msg.msg }}
                             </div>
-                            <div class="column is-narrow" style="border-left: 1px dashed lightgrey">
-                                <Timestamp class="timestamp" :time="getTimestamp(msg)" />
+                            <div class="column is-narrow timestamp-column">
+                                <Timestamp class="timestamp" :time="msg.when" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <footer class="container">
+        <div class="container">
             <div class="form">
                 <div class="columns is-gapless">
                     <div class="column is-narrow">
-                        <input class="input is-medium username" v-model="user" :style="{backgroundColor: stringToColor(user), width: usernameWidth()}" style="color: white">
+                        <input class="input is-medium username" v-model="user" :style="{backgroundColor: stringToColor(user)}" style="color: white">
                     </div>
                     <div class="column">
-                        <input class="input is-medium" v-model="newMessage" placeholder="hello..." v-on:keyup.enter="send" />
+                        <input class="input is-medium" v-model="newMessage" placeholder="say hello..." v-on:keyup.enter="send" />
                     </div>
                     <div class="column is-narrow">
                         <div class="button is-success is-medium" :class="[{ 'is-loading': sending }]" v-on:click="send">{{ sendButtonText }}</div>
                     </div>
                 </div>
             </div>
-            <div v-if="error" class="notification is-warning">Error: {{ error }}</div>
-        </footer>
+            <div v-if="error" class="notification is-warning sendingError"><span v-if="!error.includes('Error: ',0)">Error: </span>{{ error }}</div>
+        </div>
     </div>
 </template>
 
@@ -60,6 +59,8 @@ import Timestamp from '@/components/Timestamp'
 import PeerList from '@/components/PeerList'
 import StatBox from '@/components/StatBox'
 import Gun from 'gun/gun'
+import {animals} from '@/misc/animals'
+import {adjectives} from '@/misc/adjectives'
 
 export default {
     components: {
@@ -79,14 +80,16 @@ export default {
             sending: false,
             error: "",
             root: 'dchat',
+            devprod: process.env.NODE_ENV === 'development' ? 'dev' : 'p',
             chatroom: 2,
             peers: {},
             user: '',
+            showPeers: false
         }
     },
     computed: {
         rootNode: function(){
-            return this.root+'/'+this.chatroom
+            return this.root+'/'+this.devprod
         },
         sortedMessages: function(){
             //todo
@@ -125,10 +128,23 @@ export default {
     },
     methods: {
         send(){
+            if(this.newMessage.trim() == ''){
+                return
+            }
             let msgId = this.generateId(20)
-            //this.$options.gun.get(msgId).put({user: this.user, msg: this.newMessage})//, this.sendCallback)
-            this.$options.gun.get(msgId).put(this.newMessage)//, this.sendCallback)
-            //this.sending = true
+            if(this.user == ''){
+                this.user = this.generateUsername()
+            }
+            //this.$options.gun.get(msgId).put(this.newMessage)// XXX WORKING WITH WEBRTC XXX
+
+            if(this.webSocketPeerCount){
+                this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}), this.sendCallback)
+                this.sending = true
+            } else {
+                //no callback if no websocket connection
+                this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}))
+                this.newMessage = ""
+            }
         },
         sendCallback(ack){
             if(ack.ok == 1){
@@ -148,14 +164,10 @@ export default {
         },
         closeConnection(peer){
             console.log(peer)
-            //this.$gun.on('bye', peer)
-            //this.$gun.opt({peers: []})
-            //Gun({peers: []})
-            //return
-
             let newPeerList = []
             let connections = new Set()
             let peers = []
+
             // eslint-disable-next-line no-unused-vars
             for(const[key,value] of Object.entries(this.$gun.back('opt.peers'))){
                 console.log(key)
@@ -184,12 +196,13 @@ export default {
         getGunUpdates(){
             this.$options.gun.map().on(this.processGunUpdate, true)
         },
-        processGunUpdate(msg, id){
-            console.log('got update',id,msg)
-            if(msg){
-                this.$set(this.messages, id, msg)
+        //processGunUpdate(value, key, x, y){
+        processGunUpdate(value, key){
+            //console.log('got update', value, key, x, y)
+            if(value){
+                this.$set(this.messages, key, JSON.parse(value))
+                this.scrollToMessage(key)
             }
-            this.scrollToMessage(this.getSoulNoSlash(msg))
         },
         getSoul(data){
             if(Gun.node.is(data)){
@@ -197,14 +210,7 @@ export default {
             }
             return false
         },
-        getSoulNoSlash(data){
-            if(Gun.node.is(data)){
-                return(Gun.node.soul(data).replace(/\//g,''))
-            }
-            return false
-        },
         getTimestamp(json){
-            //check if node is a Gun data node
             // eslint-disable-next-line
             if(Gun.node.is(json)){
                 let data = JSON.parse(JSON.stringify(json))
@@ -217,6 +223,9 @@ export default {
             } else {
                 return 0
             }
+        },
+        toggleShowPeers(){
+            this.showPeers = this.showPeers ? false : true
         },
         stringToColor(str){
             let hash = 0;
@@ -238,12 +247,6 @@ export default {
         dec2hex(dec){
             return(dec.toString(16).padStart(2, '0'))
         },
-        usernameWidth(){
-            if(this.user.length < 4){
-                return '5em'
-            }
-            return this.user.length+'em'
-        },
         scrollToMessage(id){
             this.$nextTick(() => {
                 let element = document.getElementById(id)
@@ -252,14 +255,20 @@ export default {
                 }
             })
         },
+        generateUsername(){
+            let animal = animals[Math.floor(Math.random() * animals.length)]
+            animal = animal.charAt(0).toUpperCase() + animal.slice(1)
+            let adjective = adjectives[Math.floor(Math.random() * adjectives.length)]
+            adjective = adjective.charAt(0).toUpperCase() + adjective.slice(1)
+            return adjective+" "+animal
+        }
     },
     mounted: function(){
-        //mesh
-        //this.mesh = this.$gun.back('opt.mesh')
-        /*this.$gun.on('hear', function(msg, peer = null){
-            console.log('hear msg', msg)
-            console.log('hear msg peer', peer)
-        })*/
+        if(localStorage.user){
+            this.user = localStorage.user
+        } else {
+            this.user = this.generateUsername()
+        }
         this.getGunUpdates()
         this.connectionDetails()
         setInterval(() => {
@@ -267,10 +276,7 @@ export default {
         }, 2500)
     },
     created: function(){
-        this.$options.gun = this.$gun.get(this.rootNode); //.once(this.processGunUpdate)
-        console.log("options gun",this.$options.gun)
-        console.log(this.$options.gun.constructor.name)
-        console.log(JSON.stringify(this.$options.gun))
+        this.$options.gun = this.$gun.get(this.rootNode).get(this.chatroom);
 
         this.$gun.on('hi', (peer) => {
             console.log('hi', peer)
@@ -280,7 +286,11 @@ export default {
             console.log('bye', peer)
             this.connectionDetails()
         })
-        this.user = 'user'+Math.floor(1000 + Math.random() * 9000);
+    },
+    watch: {
+        user(newName){
+            localStorage.user = newName
+        }
     }
 
 }
@@ -292,6 +302,23 @@ export default {
 }
 .chatmessages {
     text-align: left;
+    margin-bottom: 2px;
+}
+.chat {
+    max-height: 70vh;
+    overflow-y: overlay;
+    margin: 1.25rem auto;
+}
+@media screen and (max-width: 768px){
+    .chat {
+        max-height: 45vh;
+        overflow-y: scroll;
+        margin: 1.25rem auto;
+    }
+}
+.messages-box {
+    background-color: transparent;
+    padding: 0 1.25rem 0 0;
 }
 .input {
     border-color: transparent;
@@ -299,9 +326,31 @@ export default {
 }
 .username {
     border-radius: 4px 0 0 4px;
+    text-align: center;
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+}
+@media screen and (max-width: 768px){
+    .username {
+        width: 100%;
+        border-radius: 4px 4px 0 0 ;
+    }
 }
 .button {
     border-radius: 0 4px 4px 0;
+}
+@media screen and (max-width: 768px){
+    .button {
+        border-radius: 0 0 4px 4px;
+        padding-left: 2em;
+        padding-right: 2em;
+        width: 100%;
+    }
+}
+@media screen and (max-width: 768px){
+    .input {
+        text-align: center;
+    }
 }
 .level .level-item .box {
     width: 8em;
@@ -312,6 +361,30 @@ export default {
         width: auto;
         min-width: 5em;
     }
-
+}
+.sending-error {
+    margin-top: 2px;
+}
+.message-user {
+    min-width: 6em;
+    text-align: center;
+    color: #fff;
+}
+@media screen and (max-width: 768px){
+    .message-user {
+        text-align: left;
+        padding: 0 0.75rem;
+    }
+}
+.timestamp-column {
+    border-left: 1px dashed lightgrey;
+}
+@media screen and (max-width: 768px){
+    .timestamp-column {
+        border-left: none;
+        border-top: 1px dashed lightgrey;
+        text-align: right;
+        padding: 0 0.75rem;
+    }
 }
 </style>

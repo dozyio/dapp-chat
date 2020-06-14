@@ -1,9 +1,9 @@
 <template>
     <div class="level-item has-text-centered">
         <div class="box">
-            <div class="heading">{{heading}}</div>
+            <div class="heading">{{heading}}<br>{{footer}}<span v-if="content != 1 && !notplural">s</span></div>
             <div class="title">{{content}}</div>
-            <div class="heading">{{footer}}<span v-if="content != 1 && !notplural">s</span></div>
+            <!-- <div class="heading">{{footer}}<span v-if="content != 1 && !notplural">s</span></div> -->
         </div>
     </div>
 </template>
@@ -46,5 +46,8 @@ export default {
         width: auto;
         min-width: 5em;
     }
+}
+.title {
+    text-decoration: underline;
 }
 </style>

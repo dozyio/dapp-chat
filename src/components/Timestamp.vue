@@ -17,7 +17,8 @@ export default {
     computed: {
         timestamp(){
             if(this.time) {
-                return moment.utc(this.time).local().format('MMMM Do YYYY, h:mm:ss a')
+                //return moment.utc(this.time).local().format('MMMM Do YYYY, h:mm:ss a')
+                return moment.utc(this.time).local().fromNow()
             } else {
                 return ''
             }
