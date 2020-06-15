@@ -28,7 +28,7 @@
                                 {{ msg.msg }}
                             </div>
                             <div class="column is-narrow timestamp-column">
-                                <Timestamp class="timestamp" :time="msg.when" />
+                                <Timestamp class="timestamp" :forceUpdate="incrementor" :time="msg.when" />
                             </div>
                         </div>
                     </div>
@@ -85,7 +85,8 @@ export default {
             chatroom: location.hash.slice(1) || 1,
             peers: {},
             user: '',
-            showPeers: false
+            showPeers: false,
+            incrementor: 1
         }
     },
     computed: {
@@ -292,13 +293,16 @@ export default {
         setInterval(() => {
             this.connectionDetails()
         }, 2500)
+        setInterval(() => {
+            this.incrementor += 1
+        }, 30000)
     },
     created: function(){
     },
     watch: {
         user(newName){
             localStorage.user = newName
-        }
+        },
     }
 
 }

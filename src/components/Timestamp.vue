@@ -12,13 +12,20 @@ export default {
             default() {
                 return {};
             }
-        }
+        },
+        forceUpdate: {
+            type: Number,
+            default() {
+                return 0;
+            }
+        },
     },
     computed: {
         timestamp(){
             if(this.time) {
                 //return moment.utc(this.time).local().format('MMMM Do YYYY, h:mm:ss a')
-                return moment.utc(this.time).local().fromNow()
+                //increase the milliseconds to force refresh
+                return moment.utc(parseInt(this.time+this.forceUpdate)).local().fromNow()
             } else {
                 return ''
             }

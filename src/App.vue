@@ -5,7 +5,7 @@
     </div>
     <router-view/>
     <footer>
-        <p>Made with <span class="heart">❤️</span> by <a href="https://dozy.io/">dozy.io</a></p>
+        <p><a href="https://github.com/dozyio/dapp-chat">Source Code</a> - Made with <span class="heart">❤️</span> by <a href="https://dozy.io/">dozy.io</a></p>
     </footer>
   </div>
 </template>
@@ -42,11 +42,11 @@ margin: 0;
 footer {
     color: white;
 }
-a {
+footer a {
     color: #fff;
     text-decoration: underline;
 }
-a:hover {
+footer a:hover {
     color: #fff;
 }
 @media screen and (min-width: 769px){

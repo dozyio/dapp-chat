@@ -1,5 +1,8 @@
 # Chat using GUN db and Vue.js - Dapp
 
+## Example site
+[https://chat-dapp.netlify.app/](https://chat-dapp.netlify.app/)
+
 ## Project setup
 ```
 npm install
@@ -15,8 +18,4 @@ npm run serve
 npm run build
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
 
