@@ -49,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div v-if="error" class="notification is-warning sendingError"><span v-if="!error.includes('Error: ',0)">Error: </span>{{ error }}</div>
+            <div v-if="error" class="notification is-warning sendingError">Error: {{ error }}</div>
         </div>
         <div class="chatroom"><span class="chatroom-label-chat">Chat</span>room {{chatroom}}</div>
     </div>
@@ -307,6 +307,11 @@ export default {
         user(newName){
             localStorage.user = newName
         },
+        error(err){
+            if(err.includes('Error: ')){
+                this.error = err.replace('Error: ','')
+            }
+        }
     }
 
 }
