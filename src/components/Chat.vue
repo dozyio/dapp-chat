@@ -5,7 +5,7 @@
                 <div class="level is-mobile">
                     <StatBox heading="Connected" :content="peerCount" footer="Peer" v-on:click.native="toggleShowPeers" />
                     <StatBox heading="WebSocket" :content="webSocketPeerCount" footer="Super Peer" v-on:click.native="toggleShowPeers" />
-                    <StatBox heading="WebRTC" :content="webRTCPeerCount" footer="Peer" v-on:click.native="toggleShowPeers" />
+                    <StatBox v-if="webrtcCompatible" heading="WebRTC" :content="webRTCPeerCount" footer="Peer" v-on:click.native="toggleShowPeers" />
                     <StatBox heading="Message" :content="messageCount" footer="Count" notplural v-on:click.native="toggleShowPeers" />
                 </div>
                 <div v-if="peerCount">
@@ -86,7 +86,8 @@ export default {
             peers: {},
             user: '',
             showPeers: false,
-            incrementor: 1
+            incrementor: 1,
+            webrtcCompatible: window.RTCPeerConnection || false
         }
     },
     computed: {
@@ -206,7 +207,7 @@ export default {
         },
         //processGunUpdate(value, key, x, y){
         processGunUpdate(value, key){
-            console.log('got update', value, key)
+            //console.log('got update', value, key)
             if(value){
                 this.$set(this.messages, key, JSON.parse(value))
                 this.scrollToMessage(key)
@@ -321,19 +322,19 @@ export default {
 }
 .chat {
     max-height: 70vh;
-    overflow-y: overlay;
+    overflow-y: auto;
     margin: 1.25rem auto;
 }
 @media screen and (max-width: 768px){
     .chat {
         max-height: 45vh;
-        overflow-y: scroll;
+        overflow-y: auto;
         margin: 1.25rem auto;
     }
 }
 .messages-box {
     background-color: transparent;
-    padding: 0 1.25rem 0 0;
+    padding: 0 2px 0 0;
 }
 .input {
     border-color: transparent;
