@@ -3,5 +3,8 @@ module.exports = {
     },
     devServer: {
         disableHostCheck: true
+    },
+    pwa: {
+        name: 'DApp Chat'
     }
 };
