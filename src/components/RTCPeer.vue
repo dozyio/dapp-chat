@@ -8,7 +8,7 @@
 <script>
 export default {
     props: {
-        peer: RTCPeerConnection
+        peer: [RTCPeerConnection, Object]
     },
     components: {
     },
