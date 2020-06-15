@@ -25,10 +25,8 @@ export default {
                     if(this.peer.connectionState == "connected"){
                             return "is-success"
                     } else if(this.peer.connectionState == "failed") {
-                        this.$emit('failedPeer', this.peer)
                         return "is-danger"
                     } else if(this.peer.connectionState == "disconnected") {
-                        this.$emit('failedPeer', this.peer)
                         return "is-info"
                     } else {
                         return "is-warning"

@@ -27,10 +27,6 @@ export default {
     computed: {
     },
     methods: {
-        failedPeer: function(peer){
-            console.log('failed peer peerlist',peer)
-            this.$emit("failedPeer",peer)
-        }
     },
     mounted: function(){
     },

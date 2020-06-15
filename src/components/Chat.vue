@@ -52,6 +52,7 @@
             <div v-if="error" class="notification is-warning sendingError">Error: {{ error }}</div>
         </div>
         <div class="chatroom"><span class="chatroom-label-chat">Chat</span>room {{chatroom}}</div>
+        <div class="kill-peers" v-on:click="closeConnection('all')">Go Offline</div>
     </div>
 </template>
 
@@ -70,7 +71,7 @@ export default {
         StatBox
     },
     name: 'Chats',
-    gun: new Object,
+    gun: new Object, //non-reactive, handle changes with .on
     data: function() {
         return {
             //gun: null,
@@ -121,7 +122,7 @@ export default {
             // eslint-disable-next-line no-unused-vars
             for(const[key,value] of Object.entries(this.peers)){
                 if(value.wire !== undefined && value.wire !== null){
-                    if(value.wire.constructor.name == "RTCDataChannel"){
+                    if(value.constructor.name == "RTCPeerConnection"){
                         c++
                     }
                 }
@@ -131,9 +132,7 @@ export default {
     },
     methods: {
         send(){
-            console.log('sending')
             if(this.newMessage.trim() == ''){
-                console.log('empty trim send failed')
                 return
             }
             let msgId = this.generateId(20)
@@ -143,18 +142,16 @@ export default {
             //this.$options.gun.get(msgId).put(this.newMessage)// XXX WORKING WITH WEBRTC XXX
 
             if(this.webSocketPeerCount){
-                console.log('websocket send')
                 this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}), this.sendCallback)
                 this.sending = true
             } else {
-                console.log('webrtc send')
                 //no callback if no websocket connection
                 this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}))
                 this.newMessage = ""
             }
         },
         sendCallback(ack){
-            console.log(ack)
+            //console.log(ack)
             if(ack.ok == 1){
                 this.newMessage = ""
                 this.sending = false
@@ -164,6 +161,7 @@ export default {
                 console.log(ack)
                 if(ack.err == undefined){
                     this.error = "Couldn't send message"
+                    this.newMessage = ""
                 } else {
                     this.error = ack.err
                 }
@@ -171,36 +169,43 @@ export default {
             }
         },
         closeConnection(peer){
-            //todo
-            console.log(peer)
+            if(peer === 'all'){
+                this.$gun.opt({peers: []})
+                return
+            }
+            /*
+            //TODO handle closing individual peers
+
+            console.log("peers",this.peers)
+            //console.log(this.$gun.back('opt.peers'))
             let newPeerList = []
-            let connections = new Set()
-            let peers = []
-
-            // eslint-disable-next-line no-unused-vars
-            for(const[key,value] of Object.entries(this.$gun.back('opt.peers'))){
-                console.log(key)
-                console.log(value)
-                connections.add(value)
-
-            }
-            peers = [...connections]
-            for(let i = 0; i < peers.length; i++){
-                if(peers[i].url != peer.url){
-                    newPeerList.push(peers[i])
+            if(peer.id !== undefined){
+                //console.log(peer)
+                // eslint-disable-next-line no-unused-vars
+                for(const[key,value] of Object.entries(this.peers)){
+                    if(peer.id === value.id){
+                        //console.log("key",key)
+                        //console.log("value",value)
+                        //console.log("gunval", this.$gun.back('opt.peers')[value.id])
+                        if(this.$gun.back('opt.peers')[value.id]){
+                            if(this.$gun.back('opt.peers')[value.id].wire){
+                                this.$gun.back('opt.peers')[value.id].wire.close()
+                            }
+                        }
+                    }
+                    else {
+                        newPeerList.push(value)
+                    }
                 }
+                console.log("newpeerlist",newPeerList)
+                this.$gun.opt({peers: []})
+                this.$gun.opt({peers: newPeerList})
             }
-            console.log("closing peer",peer)
-            console.log("peers", peers)
-            console.log("newpeers", newPeerList)
-            this.$gun.back('opt.peers')[peer.url].wire.close()
-            //this.$gun.on('bye', peer)
-            this.$gun.opt({peers: []})
-            this.$gun.opt({peers: newPeerList})
-            //this.peers = newPeerList
+            */
         },
         connectionDetails(){
             this.peers = Object.assign({}, this.$gun.back('opt.peers'))
+
         },
         getGunUpdates(){
             this.$options.gun.map().on(this.processGunUpdate, true)
@@ -215,6 +220,7 @@ export default {
         },
         failedPeer(peer){
             console.log("failed peer in chat.vue",peer)
+            this.closeConnection(peer)
         },
         getSoul(data){
             if(Gun.node.is(data)){
@@ -277,7 +283,8 @@ export default {
     },
     mounted: function(){
         this.$options.gun = this.$gun.get(this.rootNode)
-        console.log(this.$options.gun)
+        //console.log(this.$options.gun)
+
         this.$gun.on('hi', (peer) => {
             console.log('hi', peer)
             this.connectionDetails()
@@ -294,9 +301,12 @@ export default {
         }
         this.getGunUpdates()
         this.connectionDetails()
+
         setInterval(() => {
             this.connectionDetails()
         }, 2500)
+
+        //update relative timestamps every 30 seconds
         setInterval(() => {
             this.incrementor += 1
         }, 30000)
@@ -424,6 +434,21 @@ export default {
     }
     .chatroom-label-chat {
         display: none;
+    }
+}
+.kill-peers {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-right: 1px dashed lightgrey;
+    border-bottom: 1px dashed lightgrey;
+    color: #fff;
+    padding: 0.5rem;
+}
+@media screen and (max-width: 768px){
+    .kill-peers {
+        padding:0 0.15rem;
+        text-transform:capitalize;
     }
 }
 </style>
