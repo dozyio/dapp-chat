@@ -5,6 +5,11 @@ module.exports = {
         disableHostCheck: true
     },
     pwa: {
-        name: 'DApp Chat'
+        name: 'DApp Chat',
+        workboxPluginMode: 'InjectManifest',
+        workboxOptions: {
+            swSrc: './src/sw.js',
+            swDest: 'service-worker.js',
+        },
     }
 };
