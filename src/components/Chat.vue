@@ -11,8 +11,8 @@
                 <div v-if="peerCount">
                     <PeerList v-if="showPeers" :peers="peers" />
                 </div>
-                <div v-else class="notification is-danger">
-                    Disconnected
+                <div v-else class="notification is-info">
+                    Offline
                 </div>
             </div>
         </div>
@@ -211,6 +211,9 @@ export default {
                 this.$set(this.messages, key, JSON.parse(value))
                 this.scrollToMessage(key)
             }
+        },
+        failedPeer(peer){
+            console.log("failed peer in chat.vue",peer)
         },
         getSoul(data){
             if(Gun.node.is(data)){

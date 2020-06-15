@@ -2,11 +2,6 @@
     <div class="notification" :class="statusClass">
         {{ peer.id }} (WebRTC) - {{ peer.connectionState | capitalize }}
         <div>{{ JSON.stringify(peer) }}</div>
-        <!-- <div v-if="peer.remoteDescription.sdp">
-            {{ peer.remoteDescription.sdp }}
-        </div> -->
-        <!-- {{ JSON.stringify(peer) }} -->
-        <!-- <div v-html="sdp"></div> -->
     </div>
 </template>
 
@@ -24,14 +19,6 @@ export default {
         }
     },
     watch: {
-        /*
-        status: function(to, from){
-            //todo
-            //console.log(from)
-            if(to =='failed'){
-                console.log("failed")
-            }
-        }*/
     },
     computed: {
         sdp: function(){
@@ -48,9 +35,13 @@ export default {
             if(this.peer.connectionState == "connected"){
                     return "is-success"
             } else if(this.peer.connectionState == "failed") {
+                this.$emit('failedPeer', this.peer)
                 return "is-danger"
-            } else {
+            } else if(this.peer.connectionState == "disconnected") {
+                this.$emit('failedPeer', this.peer)
                 return "is-info"
+            } else {
+                return "is-warning"
             }
         }
 

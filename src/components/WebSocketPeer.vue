@@ -26,8 +26,10 @@ export default {
                 } else {
                     return "Connecting"
                 }
+            } else {
+                this.$emit('failedPeer', this.peer)
+                return "Disconnected"
             }
-            return "Disconnected"
         },
         statusClass: function() {
             if(this.peer.wire !== undefined){

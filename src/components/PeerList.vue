@@ -1,7 +1,7 @@
 <template>
     <div>
         <div v-for="peer in peers" :key="peer.key" class="peers">
-            <div v-if="peer.constructor.name == 'RTCPeerConnection'"><RTCPeer :peer="peer" v-on:failed-peer="onFailedPeer" /></div>
+            <div v-if="peer.constructor.name == 'RTCPeerConnection' && rtcCompatible"><RTCPeer :peer="peer" /></div>
             <div v-else-if="peer.constructor.name == 'Object'"><WebSocketPeer :peer="peer" /></div>
         </div>
     </div>
@@ -21,14 +21,15 @@ export default {
     name: 'PeerList',
     data: function() {
         return {
+            rtcCompatible: window.RTCPeerConnection || false
         }
     },
     computed: {
     },
     methods: {
-        onFailedPeer: function(peerId){
-            console.log('failed peer peerlist',peerId)
-            this.$emit("failedPeer",peerId)
+        failedPeer: function(peer){
+            console.log('failed peer peerlist',peer)
+            this.$emit("failedPeer",peer)
         }
     },
     mounted: function(){
