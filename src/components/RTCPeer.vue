@@ -1,5 +1,5 @@
 <template>
-    <div class="notification" :class="statusClass">
+    <div v-if="webrtcCompatible" class="notification" :class="statusClass">
         {{ peer.id }} (WebRTC) - {{ peer.connectionState | capitalize }}
         <div>{{ JSON.stringify(peer) }}</div>
     </div>
@@ -7,42 +7,35 @@
 
 <script>
 export default {
-    props: {
-        peer: [RTCPeerConnection, Object]
-    },
+    props: ['peer'],
     components: {
     },
     name: 'RTCPeer',
     data: function() {
         return {
-            status: ''
+            webrtcCompatible: window.RTCPeerConnection || false
         }
     },
     watch: {
     },
     computed: {
-        sdp: function(){
-            if(this.peer.remoteSet !== undefined){
-                return JSON.stringify(this.peer.remoteSet).replace(/\\r\\n/g,'<br>')
-            } else if(this.peer.remoteDescription !== undefined){
-                return JSON.stringify(this.peer.remoteDescription).replace(/\\r\\n/g,'<br>')
-            }
-            else {
-                return ''
-            }
-        },
         statusClass: function() {
-            if(this.peer.connectionState == "connected"){
-                    return "is-success"
-            } else if(this.peer.connectionState == "failed") {
-                this.$emit('failedPeer', this.peer)
-                return "is-danger"
-            } else if(this.peer.connectionState == "disconnected") {
-                this.$emit('failedPeer', this.peer)
-                return "is-info"
-            } else {
-                return "is-warning"
+            if(window.RTCPeerConnection){
+                if(this.peer.constructor.name == 'RTCPeerConnection'){
+                    if(this.peer.connectionState == "connected"){
+                            return "is-success"
+                    } else if(this.peer.connectionState == "failed") {
+                        this.$emit('failedPeer', this.peer)
+                        return "is-danger"
+                    } else if(this.peer.connectionState == "disconnected") {
+                        this.$emit('failedPeer', this.peer)
+                        return "is-info"
+                    } else {
+                        return "is-warning"
+                    }
+                }
             }
+            return ''
         }
 
     },

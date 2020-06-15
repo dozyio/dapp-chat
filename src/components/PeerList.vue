@@ -1,7 +1,7 @@
 <template>
     <div>
         <div v-for="peer in peers" :key="peer.key" class="peers">
-            <div v-if="peer.constructor.name == 'RTCPeerConnection' && rtcCompatible"><RTCPeer :peer="peer" /></div>
+            <div v-if="peer.constructor.name == 'RTCPeerConnection' && webrtcCompatible"><RTCPeer :peer="peer" /></div>
             <div v-else-if="peer.constructor.name == 'Object'"><WebSocketPeer :peer="peer" /></div>
         </div>
     </div>
@@ -21,7 +21,7 @@ export default {
     name: 'PeerList',
     data: function() {
         return {
-            rtcCompatible: window.RTCPeerConnection || false
+            webrtcCompatible: window.RTCPeerConnection || false
         }
     },
     computed: {
