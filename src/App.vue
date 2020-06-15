@@ -23,14 +23,16 @@ export default {
         }
     },
     created() {
-        document.addEventListener(
-            'swUpdated', this.showRefreshUI, { once: true }
-        );
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (this.refreshing) return;
-            this.refreshing = true;
-            window.location.reload();
-        });
+        if(navigator.serviceWorker){
+            document.addEventListener(
+                'swUpdated', this.showRefreshUI, { once: true }
+            );
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (this.refreshing) return;
+                this.refreshing = true;
+                window.location.reload();
+            });
+        }
     },
     methods: {
         showRefreshUI (e) {
