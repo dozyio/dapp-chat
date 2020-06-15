@@ -90,7 +90,7 @@ export default {
     },
     computed: {
         rootNode: function(){
-            return this.root+'/'+this.devprod
+            return this.root+'/'+this.devprod+'/'+this.chatroom
         },
         sortedMessages: function(){
             //todo
@@ -129,7 +129,9 @@ export default {
     },
     methods: {
         send(){
+            console.log('sending')
             if(this.newMessage.trim() == ''){
+                console.log('empty trim send failed')
                 return
             }
             let msgId = this.generateId(20)
@@ -139,15 +141,18 @@ export default {
             //this.$options.gun.get(msgId).put(this.newMessage)// XXX WORKING WITH WEBRTC XXX
 
             if(this.webSocketPeerCount){
+                console.log('websocket send')
                 this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}), this.sendCallback)
                 this.sending = true
             } else {
+                console.log('webrtc send')
                 //no callback if no websocket connection
                 this.$options.gun.get(msgId).put(JSON.stringify({user: this.user, msg: this.newMessage, when: Gun.state()}))
                 this.newMessage = ""
             }
         },
         sendCallback(ack){
+            console.log(ack)
             if(ack.ok == 1){
                 this.newMessage = ""
                 this.sending = false
@@ -266,7 +271,7 @@ export default {
         }
     },
     mounted: function(){
-        this.$options.gun = this.$gun.get(this.rootNode).get(this.chatroom);
+        this.$options.gun = this.$gun.get(this.rootNode)
         console.log(this.$options.gun)
         this.$gun.on('hi', (peer) => {
             console.log('hi', peer)
