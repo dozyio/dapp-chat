@@ -51,6 +51,7 @@
             </div>
             <div v-if="error" class="notification is-warning sendingError"><span v-if="!error.includes('Error: ',0)">Error: </span>{{ error }}</div>
         </div>
+        <div class="chatroom"><span class="chatroom-label-chat">Chat</span>room {{chatroom}}</div>
     </div>
 </template>
 
@@ -81,7 +82,7 @@ export default {
             error: "",
             root: 'dchat',
             devprod: process.env.NODE_ENV === 'development' ? 'dev' : 'p',
-            chatroom: 2,
+            chatroom: location.hash.slice(1) || 1,
             peers: {},
             user: '',
             showPeers: false
@@ -163,6 +164,7 @@ export default {
             }
         },
         closeConnection(peer){
+            //todo
             console.log(peer)
             let newPeerList = []
             let connections = new Set()
@@ -198,7 +200,7 @@ export default {
         },
         //processGunUpdate(value, key, x, y){
         processGunUpdate(value, key){
-            //console.log('got update', value, key, x, y)
+            console.log('got update', value, key)
             if(value){
                 this.$set(this.messages, key, JSON.parse(value))
                 this.scrollToMessage(key)
@@ -264,6 +266,17 @@ export default {
         }
     },
     mounted: function(){
+        this.$options.gun = this.$gun.get(this.rootNode).get(this.chatroom);
+        console.log(this.$options.gun)
+        this.$gun.on('hi', (peer) => {
+            console.log('hi', peer)
+            this.connectionDetails()
+        })
+        this.$gun.on('bye', (peer) => {
+            console.log('bye', peer)
+            this.connectionDetails()
+        })
+
         if(localStorage.user){
             this.user = localStorage.user
         } else {
@@ -276,16 +289,6 @@ export default {
         }, 2500)
     },
     created: function(){
-        this.$options.gun = this.$gun.get(this.rootNode).get(this.chatroom);
-
-        this.$gun.on('hi', (peer) => {
-            console.log('hi', peer)
-            this.connectionDetails()
-        })
-        this.$gun.on('bye', (peer) => {
-            console.log('bye', peer)
-            this.connectionDetails()
-        })
     },
     watch: {
         user(newName){
@@ -385,6 +388,24 @@ export default {
         border-top: 1px dashed lightgrey;
         text-align: right;
         padding: 0 0.75rem;
+    }
+}
+.chatroom {
+    position: fixed;
+    top: 0;
+    right: 0;
+    border-left: 1px dashed lightgrey;
+    border-bottom: 1px dashed lightgrey;
+    color: #fff;
+    padding: 0.5rem;
+}
+@media screen and (max-width: 768px){
+    .chatroom {
+        padding:0 0.15rem;
+        text-transform:capitalize;
+    }
+    .chatroom-label-chat {
+        display: none;
     }
 }
 </style>

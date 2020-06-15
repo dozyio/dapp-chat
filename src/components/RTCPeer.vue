@@ -24,12 +24,14 @@ export default {
         }
     },
     watch: {
+        /*
         status: function(to, from){
-            console.log(from)
+            //todo
+            //console.log(from)
             if(to =='failed'){
                 console.log("failed")
             }
-        }
+        }*/
     },
     computed: {
         sdp: function(){
@@ -61,7 +63,6 @@ export default {
         }
     },
     mounted: function(){
-        console.log(JSON.stringify(this.peer))
         console.log("RTCPeer",this.peer)
     },
     created: function(){
