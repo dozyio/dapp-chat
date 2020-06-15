@@ -160,8 +160,9 @@ export default {
                 console.log("failed ack")
                 console.log(ack)
                 if(ack.err == undefined){
-                    this.error = "Couldn't send message"
-                    this.newMessage = ""
+                    this.error = "Couldn't send message - possibly sent to dead webrtc peer"
+                    //this.newMessage = ""
+                    this.sending = false
                 } else {
                     this.error = ack.err
                 }
@@ -444,6 +445,7 @@ export default {
     border-bottom: 1px dashed lightgrey;
     color: #fff;
     padding: 0.5rem;
+    cursor: pointer;
 }
 @media screen and (max-width: 768px){
     .kill-peers {
