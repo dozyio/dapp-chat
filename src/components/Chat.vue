@@ -319,8 +319,8 @@ export default {
             localStorage.user = newName
         },
         error(err){
-            if(err.includes('Error: ')){
-                this.error = err.replace('Error: ','')
+            if(String(err).includes('Error: ')){
+                this.error = String(err).replace('Error: ','')
             }
         }
     }
