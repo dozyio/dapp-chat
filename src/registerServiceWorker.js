@@ -2,7 +2,7 @@
 import { register } from 'register-service-worker';
 
 if (process.env.NODE_ENV === 'production') {
-    if(navigator.serviceWorkder){
+    if(navigator.serviceWorker){
         register(`${process.env.BASE_URL}service-worker.js`, {
             ready () {
                 console.log('Service worker is active.');
